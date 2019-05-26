@@ -1,0 +1,15 @@
+Setup and run
+
+```sh
+yarn
+bower install
+yarn build
+yarn serve
+```
+
+To run a build watch in another tab:
+
+```sh
+yarn watch
+```
+

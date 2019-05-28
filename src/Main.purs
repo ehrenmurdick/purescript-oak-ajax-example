@@ -4,10 +4,12 @@ import Prelude
   ( Unit
   , bind
   , mempty
-  , unit
   , show
+  , (<>)
   )
 import Oak.Html.Events (onClick)
+import Oak.Debug ( debugApp )
+import Data.Show (class Show)
 import Data.Either (Either(..))
 import Effect (Effect)
 import Oak
@@ -36,14 +38,23 @@ type Model = { message :: String }
 type Response = { text :: String }
 
 data Msg
-  = Get
+  = Get String
   | GetResult (Either AjaxError Response)
 
+
+instance showMsg :: Show Msg where
+  show msg =
+    case msg of
+      Get url -> "Get " <> url
+      GetResult (Left e) -> "GetResult Left " <> show e
+      GetResult (Right r) -> "GetResult Right " <> show r
 
 view :: Model -> Html Msg
 view model =
   div []
-    [ div [] [ button [ onClick Get ] [ text "get" ] ]
+    [ div [] [ button [ onClick (Get "1.json") ] [ text "get 1" ] ]
+    , div [] [ button [ onClick (Get "2.json") ] [ text "get 2" ] ]
+    , div [] [ button [ onClick (Get "3.json") ] [ text "get 3" ] ]
     , div [] [ text model.message ]
     ]
 
@@ -55,7 +66,7 @@ next msg mod h =
     (GetResult _) -> mempty
     -- mempty is a "do nothing" effect
 
-    Get -> get GetResult "1.json" h
+    Get url -> get GetResult url h
     -- send a get request to "/1.json"
     -- and decode the result into the GetResult message
     -- Left AjaxError if it failed
@@ -65,17 +76,17 @@ next msg mod h =
 update :: Msg -> Model -> Model
 update msg model =
   case msg of
-    Get                        -> model
+    Get url                    -> model { message = "getting " <> url <> "..." }
     (GetResult (Left e))       -> model { message = show e }
     (GetResult (Right result)) -> model { message = result.text }
 
 
-init :: Unit -> Model
-init _ =
+init :: Model
+init =
   { message: ""
   }
 
-app :: App Model Msg Unit
+app :: App Msg Model
 app = createApp
   { init: init
   , view: view
@@ -85,6 +96,6 @@ app = createApp
 
 main :: Effect Unit
 main = do
-  rootNode <- runApp app unit
+  rootNode <- runApp (debugApp app)
   container <- getElementById "app"
   appendChildNode container rootNode

@@ -20,3 +20,10 @@ big :: Array StyleAttribute
 big =
   [ fontSize "24pt"
   ]
+
+list :: Array StyleAttribute
+list =
+  [ listStyleType "none"
+  , margin "0"
+  , padding "4px"
+  ]

@@ -3,14 +3,15 @@ module Main (main) where
 import Prelude
   ( Unit
   , bind
+  , map
   , mempty
   , show
   , (<>)
   , ($)
   )
 import Style as S
-import Oak.Html.Events (onClick)
-import Oak.Html.Attribute ( style )
+import Oak.Html.Events (onClick, onInput)
+import Oak.Html.Attribute ( style, value )
 import Oak.Debug ( debugApp )
 import Data.Show (class Show)
 import Data.Either (Either(..))
@@ -26,6 +27,9 @@ import Oak.Html
   , text
   , button
   , section
+  , ul
+  , li
+  , input
   )
 import Oak.Document
   ( appendChildNode
@@ -34,78 +38,94 @@ import Oak.Document
 import Oak.Ajax
   ( get
   , delete
+  , post
   , AjaxError
   )
 
 
-type Model = { message :: String }
+type Model =
+  { todos :: Array Todo
+  , form :: {
+      text :: String
+    }
+  }
 
-type Response = { text :: String }
-type DelResp  = { }
+type Todo =
+  { id :: Int
+  , text :: String
+  }
+
+type Index = Array Todo
 
 data Msg
-  = Get String
-  | Delete String
-  | GetResult (Either AjaxError Response)
-  | DelResult (Either AjaxError DelResp)
+  = Get
+  | Input String
+  | Got Response
 
+data Response
+  = Index (Either AjaxError Index)
 
 instance showMsg :: Show Msg where
   show msg =
     case msg of
-      Get       url -> "Get "       <> url
-      Delete    url -> "Delete "    <> url
-      GetResult a   -> "GetResult " <> show a
-      DelResult a   -> "DelResult " <> show a
+      Get -> "Get"
+      Got r -> "Got " <> show r
+      Input str -> "Input"
+
+
+instance showResponse :: Show Response where
+  show resp =
+    case resp of
+      Index (Right _) -> "Index"
+      Index e -> "Index " <> show e
+
 
 view :: Model -> Html Msg
 view model =
   div [ style S.container ]
     [ section [ style S.section ]
-      [ div [] [ button [ onClick (Get "1") ] [ text "get 1" ] ]
-      , div [] [ button [ onClick (Get "2") ] [ text "get 2" ] ]
-      , div [] [ button [ onClick (Get "3") ] [ text "get 3" ] ]
-      ]
-    , section [ style S.section ]
-      [ div [] [ button [ onClick (Delete "1") ] [ text "del 1" ] ]
-      , div [] [ button [ onClick (Delete "2") ] [ text "del 2" ] ]
-      , div [] [ button [ onClick (Delete "3") ] [ text "del 3" ] ]
+      [ div [] [ button [ onClick (Get) ] [ text "Get Todos" ] ]
       ]
     , section [ style $ S.big <> S.section ]
-      [ div [ style S.big ] [ text model.message ]
+      [ ul [ style S.list ]
+        (map showTodo model.todos)
+      ]
+    , section [ style $ S.big <> S.section ]
+      [ div [ style S.big ]
+        [ input [ onInput Input, value model.form.text ] []
+        ]
       ]
     ]
 
+showTodo :: Todo -> Html Msg
+showTodo todo =
+  li [] [ text todo.text ]
+
 
 urlFor :: String -> String
-urlFor str = "http://localhost:3000/greetings/" <> str
+urlFor str = "http://localhost:3000/todos" <> str
+
 
 next :: Msg -> Model -> (Msg -> Effect Unit) -> Effect Unit
 next msg mod h =
   case msg of
-
-    GetResult _ -> mempty
-
-    DelResult _ -> mempty
-
-    Get str -> get GetResult (urlFor str) h
-
-    Delete str -> delete DelResult (urlFor str) h
+    Got _ -> mempty
+    Input _ -> mempty
+    Get -> get Index (urlFor "") (map h Got)
 
 update :: Msg -> Model -> Model
 update msg model =
   case msg of
-    Get url                    -> model { message = "getting " <> url <> "..." }
-    Delete url                 -> model { message = "deleting " <> url <> "..." }
-    (GetResult (Left e))       -> model { message = show e }
-    (GetResult (Right result)) -> model { message = result.text }
-    (DelResult (Left e))       -> model { message = show e }
-    (DelResult (Right result)) -> model { message = "done." }
+    Get -> model
+    Got (Index (Right todos)) -> model { todos = todos }
+    Got _ -> model
+    Input str -> model { form { text = str } }
 
 
 init :: Model
 init =
-  { message: ""
+  { todos: []
+  , form: { text: "" }
   }
 
 app :: App Msg Model

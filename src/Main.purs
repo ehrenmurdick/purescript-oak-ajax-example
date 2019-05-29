@@ -6,8 +6,11 @@ import Prelude
   , mempty
   , show
   , (<>)
+  , ($)
   )
+import Style as S
 import Oak.Html.Events (onClick)
+import Oak.Html.Attribute ( style )
 import Oak.Debug ( debugApp )
 import Data.Show (class Show)
 import Data.Either (Either(..))
@@ -22,6 +25,7 @@ import Oak.Html
   , div
   , text
   , button
+  , section
   )
 import Oak.Document
   ( appendChildNode
@@ -29,6 +33,7 @@ import Oak.Document
   )
 import Oak.Ajax
   ( get
+  , delete
   , AjaxError
   )
 
@@ -36,49 +41,66 @@ import Oak.Ajax
 type Model = { message :: String }
 
 type Response = { text :: String }
+type DelResp  = { }
 
 data Msg
   = Get String
+  | Delete String
   | GetResult (Either AjaxError Response)
+  | DelResult (Either AjaxError DelResp)
 
 
 instance showMsg :: Show Msg where
   show msg =
     case msg of
-      Get url -> "Get " <> url
-      GetResult (Left e) -> "GetResult Left " <> show e
-      GetResult (Right r) -> "GetResult Right " <> show r
+      Get       url -> "Get "       <> url
+      Delete    url -> "Delete "    <> url
+      GetResult a   -> "GetResult " <> show a
+      DelResult a   -> "DelResult " <> show a
 
 view :: Model -> Html Msg
 view model =
-  div []
-    [ div [] [ button [ onClick (Get "1.json") ] [ text "get 1" ] ]
-    , div [] [ button [ onClick (Get "2.json") ] [ text "get 2" ] ]
-    , div [] [ button [ onClick (Get "3.json") ] [ text "get 3" ] ]
-    , div [] [ text model.message ]
+  div [ style S.container ]
+    [ section [ style S.section ]
+      [ div [] [ button [ onClick (Get "1") ] [ text "get 1" ] ]
+      , div [] [ button [ onClick (Get "2") ] [ text "get 2" ] ]
+      , div [] [ button [ onClick (Get "3") ] [ text "get 3" ] ]
+      ]
+    , section [ style S.section ]
+      [ div [] [ button [ onClick (Delete "1") ] [ text "del 1" ] ]
+      , div [] [ button [ onClick (Delete "2") ] [ text "del 2" ] ]
+      , div [] [ button [ onClick (Delete "3") ] [ text "del 3" ] ]
+      ]
+    , section [ style $ S.big <> S.section ]
+      [ div [ style S.big ] [ text model.message ]
+      ]
     ]
 
+
+urlFor :: String -> String
+urlFor str = "http://localhost:3000/greetings/" <> str
 
 next :: Msg -> Model -> (Msg -> Effect Unit) -> Effect Unit
 next msg mod h =
   case msg of
 
-    (GetResult _) -> mempty
-    -- mempty is a "do nothing" effect
+    GetResult _ -> mempty
 
-    Get url -> get GetResult url h
-    -- send a get request to "/1.json"
-    -- and decode the result into the GetResult message
-    -- Left AjaxError if it failed
-    -- Right a where a is the response type from the server
-    --   if it was successful
+    DelResult _ -> mempty
+
+    Get str -> get GetResult (urlFor str) h
+
+    Delete str -> delete DelResult (urlFor str) h
 
 update :: Msg -> Model -> Model
 update msg model =
   case msg of
     Get url                    -> model { message = "getting " <> url <> "..." }
+    Delete url                 -> model { message = "deleting " <> url <> "..." }
     (GetResult (Left e))       -> model { message = show e }
     (GetResult (Right result)) -> model { message = result.text }
+    (DelResult (Left e))       -> model { message = show e }
+    (DelResult (Right result)) -> model { message = "done." }
 
 
 init :: Model

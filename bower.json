@@ -12,7 +12,7 @@
     "purescript-effect": "^2.0.1",
     "purescript-oak": "^0.7.0",
     "purescript-oak-debug": "^0.7.0",
-    "purescript-oak-ajax": "^0.7.0"
+    "purescript-oak-ajax": "/home/ehren/workspace/purescript-oak-ajax#master"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

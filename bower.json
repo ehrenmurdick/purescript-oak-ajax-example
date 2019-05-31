@@ -11,8 +11,8 @@
     "purescript-console": "^4.2.0",
     "purescript-effect": "^2.0.1",
     "purescript-oak": "^0.8.0",
-    "purescript-oak-debug": "^0.7.0",
-    "purescript-oak-ajax": "/home/ehren/workspace/purescript-oak-ajax#master"
+    "purescript-oak-debug": "^0.8.0",
+    "purescript-oak-ajax": "^0.8.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"

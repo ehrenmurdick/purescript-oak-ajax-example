@@ -1,16 +1,4 @@
 {
   "todos": [
-    {
-      "id": 1,
-      "text": "hi"
-    },
-    {
-      "id": 2,
-      "text": "there"
-    },
-    {
-      "id": 3,
-      "text": "neato"
-    }
   ]
 }

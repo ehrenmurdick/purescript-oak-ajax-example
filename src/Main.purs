@@ -172,6 +172,10 @@ next msg mod h =
     Keydown 13 -> doPost
     Keydown _ -> mempty
 
+updateTodo :: Int -> Todo -> Array Todo -> Array Todo
+updateTodo i t ts =
+  fromMaybe ts (updateAt i t ts)
+
 update :: Msg -> Model -> Model
 update msg model =
   case msg of
@@ -179,7 +183,10 @@ update msg model =
     Post -> model
     Keydown _ -> model
     Toggle i todo -> model {
-      todos = fromMaybe model.todos (updateAt i (todo { done = not todo.done }) model.todos)
+      todos =
+        updateTodo i
+          (todo { done = not todo.done })
+          model.todos
     }
     Got (Index (Right todos)) -> model { todos = todos }
     Got (PostR (Right todo)) ->

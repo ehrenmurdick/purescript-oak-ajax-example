@@ -13,7 +13,7 @@ import Prelude
   , ($)
   )
 import Style as S
-import Oak.Html.Events (onClick, onInput)
+import Oak.Html.Events (onClick, onInput, onKeydown)
 import Oak.Html.Attribute ( style, value, type_, checked )
 import Oak.Debug ( DebugMsg(..), debugApp )
 import Data.Array (snoc, updateAt, mapWithIndex)
@@ -77,6 +77,7 @@ data Msg
   | Got Response
   | Post
   | Toggle Int Todo
+  | Keydown Int
 
 data Response
   = Index (Either AjaxError Index)
@@ -90,6 +91,7 @@ instance showMsg :: Show Msg where
       Got r -> "Got " <> show r
       Input str -> "Input " <> str
       Toggle _ t -> "Toggle: " <> t.text
+      Keydown i -> "Keydown " <> show i
 
 
 instance showResponse :: Show Response where
@@ -108,7 +110,11 @@ view model =
       [ ul [ style S.list ]
         ((mapWithIndex showTodo model.todos) <>
         [ div [ style S.big ]
-          [ input [ onInput Input, value model.form.text ] []
+          [ input
+            [ onKeydown Keydown
+            , onInput Input
+            , value model.form.text
+            ] []
           , button [ onClick Post ] [ text "create" ]
           ]
         ])
@@ -143,6 +149,13 @@ ignoreResponse a = mempty
 
 next :: Msg -> Model -> (Msg -> Effect Unit) -> Effect Unit
 next msg mod h =
+  let
+    doPost = do
+      post
+        (postBody mod)
+        (urlFor "")
+        (PostR >>> Got >>> h)
+  in
   case msg of
     Got _ -> mempty
     Input _ -> mempty
@@ -155,17 +168,16 @@ next msg mod h =
       get
         (urlFor "")
         (Index >>> Got >>> h)
-    Post -> do
-      post
-        (postBody mod)
-        (urlFor "")
-        (PostR >>> Got >>> h)
+    Post -> doPost
+    Keydown 13 -> doPost
+    Keydown _ -> mempty
 
 update :: Msg -> Model -> Model
 update msg model =
   case msg of
     Get -> model
     Post -> model
+    Keydown _ -> model
     Toggle i todo -> model {
       todos = fromMaybe model.todos (updateAt i (todo { done = not todo.done }) model.todos)
     }

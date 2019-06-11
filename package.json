@@ -4,6 +4,7 @@
     "virtual-dom": "^2.1.1"
   },
   "devDependencies": {
+    "purescript": "^0.12.0",
     "json-server": "^0.15.0"
   },
   "scripts": {
